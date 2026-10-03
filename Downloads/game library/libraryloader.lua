@@ -99,4 +99,14 @@ function LibraryLoader:LoadCurrentGame()
     return self:LoadGameByPlace(game.PlaceId)
 end
 
+-- Auto-run when the script is executed directly via loadstring(game:HttpGet(...))()
+local loader = LibraryLoader.new()
+local detected = loader:GetGameForPlace(game.PlaceId)
+if detected then
+    print("[LibraryLoader] Detected game:", detected.name, "PlaceId:", game.PlaceId)
+    loader:LoadCurrentGame()
+else
+    print("[LibraryLoader] No registered game loader for PlaceId:", tostring(game.PlaceId))
+end
+
 return LibraryLoader
