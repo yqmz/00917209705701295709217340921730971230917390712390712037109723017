@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Swemp-Hub/Elucid-Script/refs/heads/main/Elucid.Luau"))()
