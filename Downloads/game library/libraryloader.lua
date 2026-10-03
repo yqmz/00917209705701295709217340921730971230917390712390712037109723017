@@ -17,6 +17,10 @@ local RIVALS_PLACE_IDS = {
 -- Update this to your actual repo base.
 local REPO_BASE = "https://raw.githubusercontent.com/yqmz/00917209705701295709217340921730971230917390712390712037109723017/main/"
 
+local function encodeUrlPath(path)
+    return (path:gsub(" ", "%%20"))
+end
+
 function LibraryLoader.new()
     return setmetatable({}, LibraryLoader)
 end
@@ -51,7 +55,7 @@ function LibraryLoader:GetGameForPlace(placeId)
     if isTableKey(RIVALS_PLACE_IDS, placeId) then
         return {
             name = "rivals",
-            script = "Downloads/game library/rivals/gameloader.lua",
+            script = encodeUrlPath("Downloads/game library/rivals/gameloader.lua"),
         }
     end
 
@@ -66,9 +70,15 @@ function LibraryLoader:LoadGameByPlace(placeId)
     end
 
     local url = REPO_BASE .. info.script
+    print("[LibraryLoader] Loading:", url)
     local source, err = fetch(url)
     if not source then
         warn("Failed to fetch game loader for " .. info.name .. ": " .. tostring(err))
+        return nil
+    end
+
+    if source:find("404: Not Found") or source:find("There isn’t a GitHub Pages site here") then
+        warn("Bad raw URL for game loader:", url)
         return nil
     end
 
