@@ -59,15 +59,28 @@ local function runScript(fileName)
         return
     end
 
-    if result and type(result) == "table" then
+    local resultType = type(result)
+
+    if resultType == "function" then
+        result()
+        return
+    end
+
+    if resultType == "table" then
         if type(result.Start) == "function" then
             result:Start()
+            return
         elseif type(result.Run) == "function" then
             result:Run()
+            return
+        elseif type(result.Init) == "function" then
+            result:Init()
+            return
         end
-    elseif type(result) == "function" then
-        result()
     end
+
+    -- Some Rivals scripts are self-running and return nil/boolean/string/number
+    -- after executing. In that case, no extra call should be made.
 end
 
 local function createGui()
