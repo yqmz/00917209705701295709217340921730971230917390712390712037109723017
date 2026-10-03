@@ -13,6 +13,9 @@ local scripts = {
     { name = "Script 6", file = "rivals6.lua" },
     { name = "Script 7", file = "rivals7.lua" },
     { name = "Script 8", file = "rivals8.lua" },
+    { name = "Script 9", file = "rivals9.lua" },
+    { name = "Script 10", file = "rivals10.lua" },
+    { name = "Script 11", file = "rivals11.lua" },
 }
 
 local function fetch(url)
