@@ -1,22 +1,15 @@
 -- gameloader.lua
--- executor-friendly bootstrap loader for a single rivals script
--- only loads rivals1.lua right now since that is the script we verified exists
+-- Arsenal script selector
+-- buttons use the file name before .lua as the label
 
-local repoBase = "https://raw.githubusercontent.com/yqmz/00917209705701295709217340921730971230917390712390712037109723017/main/Downloads/game%20library/rivals/"
+local repoBase = "https://raw.githubusercontent.com/yqmz/00917209705701295709217340921730971230917390712390712037109723017/main/Downloads/game%20library/arsenal/"
 
 local scripts = {
-    { name = "Script 1", file = "rivals1.lua" },
-    { name = "Script 2", file = "rivals2.lua" },
-    { name = "Script 3", file = "rivals3.lua" },
-    { name = "Script 4", file = "rivals4.lua" },
-    { name = "Script 5", file = "rivals5.lua" },
-    { name = "Script 6", file = "rivals6.lua" },
-    { name = "Script 7", file = "rivals7.lua" },
-    { name = "Script 8", file = "rivals8.lua" },
-    { name = "Script 9", file = "rivals9.lua" },
-    { name = "Script 10", file = "rivals10.lua" },
-    { name = "Script 11", file = "rivals11.lua" },
-    { name = "Script 12 (paid)", file = "rivals12.lua" },
+    { file = "azure.lua" },
+    { file = "lighthub.lua", tag = "(paid)" },
+    { file = "lithium.lua" },
+    { file = "main33.lua" },
+    { file = "titanic.lua" },
 }
 
 local function fetch(url)
@@ -74,19 +67,19 @@ local function createGui()
     local player = game:GetService("Players").LocalPlayer
     local playerGui = player:WaitForChild("PlayerGui")
 
-    local existing = playerGui:FindFirstChild("RivalsLoader")
+    local existing = playerGui:FindFirstChild("ArsenalLoader")
     if existing then
         existing:Destroy()
     end
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "RivalsLoader"
+    screenGui.Name = "ArsenalLoader"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = playerGui
 
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 260, 0, 320)
-    frame.Position = UDim2.new(0.5, -130, 0.5, -160)
+    frame.Size = UDim2.new(0, 260, 0, 280)
+    frame.Position = UDim2.new(0.5, -130, 0.5, -140)
     frame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
     frame.BorderSizePixel = 0
     frame.Parent = screenGui
@@ -94,7 +87,7 @@ local function createGui()
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 28)
     title.BackgroundTransparency = 1
-    title.Text = "Rivals Loader"
+    title.Text = "Arsenal Scripts"
     title.TextColor3 = Color3.fromRGB(255, 255, 255)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 18
@@ -114,11 +107,16 @@ local function createGui()
     list.Parent = scrolling
 
     for _, scriptInfo in ipairs(scripts) do
+        local text = scriptInfo.file:match("^(.-)%.lua$") or scriptInfo.file
+        if scriptInfo.tag then
+            text = text .. " " .. scriptInfo.tag
+        end
+
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(1, -4, 0, 30)
         btn.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
         btn.BorderSizePixel = 0
-        btn.Text = scriptInfo.name
+        btn.Text = text
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Font = Enum.Font.Gotham
         btn.TextSize = 15
