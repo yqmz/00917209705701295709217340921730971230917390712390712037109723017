@@ -1955,7 +1955,7 @@ function mainapi:CreateGUI()
     end)
 
     LionWindow = LionLibrary:CreateWindow({
-        Title = "Harion Enchantments - https://discord.gg/KXqBHaNXxX",
+        Title = "Harion Enchantments - https://discord.gg/feuds",
         Center = true,
         AutoShow = false,
         TabPadding = 6,
