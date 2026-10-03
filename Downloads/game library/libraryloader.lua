@@ -70,7 +70,6 @@ function LibraryLoader:LoadGameByPlace(placeId)
     end
 
     local url = REPO_BASE .. info.script
-    print("[LibraryLoader] Loading:", url)
     local source, err = fetch(url)
     if not source then
         warn("Failed to fetch game loader for " .. info.name .. ": " .. tostring(err))

