@@ -1,178 +1,102 @@
--- ModuleScript: GameRepoLoader
--- Maps a Roblox PlaceId to a GitHub repo and loads that repo info into a slot.
+-- libraryloader.lua
+-- Loads the correct game loader for the current game/place ID.
+-- This is the repo-side bootstrap loader.
 
-local GameRepoLoader = {}
-GameRepoLoader.__index = GameRepoLoader
+local LibraryLoader = {}
+LibraryLoader.__index = LibraryLoader
 
-local function isValidPlaceId(value)
-    return type(value) == "number"
-        and value > 0
-        and math.floor(value) == value
-end
-
-local function normalizeGameName(gameName)
-    if type(gameName) ~= "string" then
-        return ""
-    end
-    return string.lower(gameName)
-end
-
-GameRepoLoader.GameRepos = {
-    -- Replace these with your real Roblox PlaceIds + GitHub repo URLs.
-    fortnite = { PlaceId = 123456789, Repo = "https://github.com/fortnite/fortnite" },
-    roblox = { PlaceId = 1962086868, Repo = "https://github.com/Roblox/roblox" },
-    minecraft = { PlaceId = 100000000, Repo = "https://github.com/MinecraftForge/MinecraftForge" },
-    valorant = { PlaceId = 200000000, Repo = "https://github.com/riotgames/valorant-game" },
-    csgo = { PlaceId = 300000000, Repo = "https://github.com/ValveSoftware/csgo" },
-    rust = { PlaceId = 400000000, Repo = "https://github.com/facepunch/Rust" },
+local RIVALS_PLACE_IDS = {
+    [17625359962] = true,
+    [18126510175] = true,
+    [71874690745115] = true,
+    [117398147513099] = true,
+    [129604661913557] = true,
+    [133215910299950] = true,
 }
 
-function GameRepoLoader.new(slotCount)
-    local self = setmetatable({}, GameRepoLoader)
-    self.SlotCount = slotCount or 100
-    self.Slots = {}
+-- Update this to your actual repo base.
+local REPO_BASE = "https://raw.githubusercontent.com/yqmz/00917209705701295709217340921730971230917390712390712037109723017/main/"
 
-    for i = 1, self.SlotCount do
-        self.Slots[i] = {
-            SlotId = i,
-            Game = "EMPTY",
-            PlaceId = 0,
-            Repo = "",
-            Loaded = false,
-        }
+function LibraryLoader.new()
+    return setmetatable({}, LibraryLoader)
+end
+
+local function fetch(url)
+    local ok, result = pcall(function()
+        return game:HttpGet(url)
+    end)
+
+    if not ok then
+        return nil, result
     end
 
-    return self
+    return result, nil
 end
 
-function GameRepoLoader:RegisterGame(gameName, placeId, repoURL)
-    self.GameRepos[normalizeGameName(gameName)] = {
-        PlaceId = tonumber(placeId) or 0,
-        Repo = repoURL or "",
-    }
+local function isTableKey(tbl, key)
+    for k in pairs(tbl) do
+        if k == key then
+            return true
+        end
+    end
+    return false
 end
 
-function GameRepoLoader:GetRepoByPlaceId(placeId)
-    local id = tonumber(placeId)
-    if not isValidPlaceId(id) then
+function LibraryLoader:GetGameForPlace(placeId)
+    placeId = tonumber(placeId)
+    if not placeId then
         return nil
     end
 
-    for gameName, config in pairs(self.GameRepos) do
-        if tonumber(config.PlaceId) == id then
-            return gameName, config.Repo
-        end
+    if isTableKey(RIVALS_PLACE_IDS, placeId) then
+        return {
+            name = "rivals",
+            script = "Downloads/game library/rivals/gameloader.lua",
+        }
     end
 
     return nil
 end
 
-function GameRepoLoader:GetRepoByGameName(gameName)
-    local key = normalizeGameName(gameName)
-    local config = self.GameRepos[key]
-    if not config then
+function LibraryLoader:LoadGameByPlace(placeId)
+    local info = self:GetGameForPlace(placeId)
+    if not info then
+        warn("No library loader registered for PlaceId " .. tostring(placeId))
         return nil
     end
-    return config.Repo
-end
 
-function GameRepoLoader:FindAvailableSlot()
-    for i = 1, self.SlotCount do
-        if not self.Slots[i].Loaded then
-            return i
-        end
+    local url = REPO_BASE .. info.script
+    local source, err = fetch(url)
+    if not source then
+        warn("Failed to fetch game loader for " .. info.name .. ": " .. tostring(err))
+        return nil
     end
 
-    error("All " .. self.SlotCount .. " slots are full.", 2)
-end
-
-function GameRepoLoader:CreateRepoScript(gameName, repoURL, parent)
-    local script = Instance.new("Script")
-    script.Name = "GitRepoLoader_" .. tostring(gameName)
-    script.Source = [[
-        local gameName = "]] .. tostring(gameName) .. [["
-        local repoURL = "]] .. tostring(repoURL) .. [["
-        print("Game:", gameName)
-        print("GitHub Repo:", repoURL)
-    ]]
-    script.Parent = parent
-    return script
-end
-
-function GameRepoLoader:LoadByPlaceId(placeId, slotId)
-    local id = tonumber(placeId)
-    if not isValidPlaceId(id) then
-        error("'" .. tostring(placeId) .. "' is not a valid Roblox PlaceId.", 2)
+    local chunk, compErr = loadstring(source)
+    if not chunk then
+        warn("Failed to compile game loader for " .. info.name .. ": " .. tostring(compErr))
+        return nil
     end
 
-    local targetSlot = slotId or self:FindAvailableSlot()
-    if targetSlot < 1 or targetSlot > self.SlotCount then
-        error("Slot " .. tostring(targetSlot) .. " is out of range. Use 1-" .. self.SlotCount .. ".", 2)
+    local ok, result = pcall(chunk)
+    if not ok then
+        warn("Failed to run game loader for " .. info.name .. ": " .. tostring(result))
+        return nil
     end
 
-    local slot = self.Slots[targetSlot]
-    if slot.Loaded then
-        error("Slot " .. targetSlot .. " is already occupied by " .. slot.Game, 2)
+    if result and type(result) == "table" and type(result.Start) == "function" then
+        result:Start()
+        return result
+    elseif type(result) == "function" then
+        result()
+        return result
     end
 
-    local gameName, repoURL = self:GetRepoByPlaceId(id)
-    if not gameName or not repoURL then
-        error("No GitHub repo configured for PlaceId " .. tostring(id), 2)
-    end
-
-    local root = Instance.new("Folder")
-    root.Name = "GameRepo_" .. tostring(gameName)
-    root.Parent = workspace
-
-    self:CreateRepoScript(gameName, repoURL, root)
-
-    slot.Game = gameName
-    slot.PlaceId = id
-    slot.Repo = repoURL
-    slot.Loaded = true
-
-    return slot
+    return result
 end
 
-function GameRepoLoader:LoadGameByPlaceId(placeId, slotId)
-    return self:LoadByPlaceId(placeId, slotId)
+function LibraryLoader:LoadCurrentGame()
+    return self:LoadGameByPlace(game.PlaceId)
 end
 
-function GameRepoLoader:LoadGameByName(gameName, slotId)
-    local key = normalizeGameName(gameName)
-    local config = self.GameRepos[key]
-    if not config then
-        error("No repo configured for game '" .. tostring(gameName) .. "'", 2)
-    end
-    return self:LoadByPlaceId(config.PlaceId, slotId)
-end
-
-function GameRepoLoader:UnloadSlot(slotId)
-    if slotId < 1 or slotId > self.SlotCount then
-        error("Slot " .. tostring(slotId) .. " is out of range. Use 1-" .. self.SlotCount .. ".", 2)
-    end
-
-    self.Slots[slotId] = {
-        SlotId = slotId,
-        Game = "EMPTY",
-        PlaceId = 0,
-        Repo = "",
-        Loaded = false,
-    }
-end
-
-function GameRepoLoader:ListSlots()
-    local list = {}
-    for i = 1, self.SlotCount do
-        table.insert(list, {
-            SlotId = self.Slots[i].SlotId,
-            Game = self.Slots[i].Game,
-            PlaceId = self.Slots[i].PlaceId,
-            Repo = self.Slots[i].Repo,
-            Loaded = self.Slots[i].Loaded,
-        })
-    end
-    return list
-end
-
-return GameRepoLoader
+return LibraryLoader
