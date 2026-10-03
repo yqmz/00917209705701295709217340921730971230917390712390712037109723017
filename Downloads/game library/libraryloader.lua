@@ -14,6 +14,10 @@ local RIVALS_PLACE_IDS = {
     [133215910299950] = true,
 }
 
+local ARSENAL_PLACE_IDS = {
+    [286090429] = true,
+}
+
 -- Update this to your actual repo base.
 local REPO_BASE = "https://raw.githubusercontent.com/yqmz/00917209705701295709217340921730971230917390712390712037109723017/main/"
 
@@ -56,6 +60,13 @@ function LibraryLoader:GetGameForPlace(placeId)
         return {
             name = "rivals",
             script = encodeUrlPath("Downloads/game library/rivals/gameloader.lua"),
+        }
+    end
+
+    if isTableKey(ARSENAL_PLACE_IDS, placeId) then
+        return {
+            name = "arsenal",
+            script = encodeUrlPath("Downloads/game library/arsenal/gameloader.lua"),
         }
     end
 
